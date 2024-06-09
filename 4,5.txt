@@ -1,0 +1,437 @@
+**** lab 4***************
+
+---task 1 q).Solve 8- Puzzle problem:
+• Consist of 3 × 3 board with eight numbered tiles and a blank space.
+• A tile adjacent to the blank space can slide into the space.
+• The objective is to reach a specified goal state, such as the one shown in the discussion above.
+
+from collections import deque
+
+# Define the goal state of the puzzle
+goal_state = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 0]  # 0 represents the blank space
+]
+
+# Define possible moves
+moves = [
+    (1, 0),  # Down
+    (-1, 0), # Up
+    (0, 1),  # Right
+    (0, -1)  # Left
+]
+
+def is_goal(state):
+    return state == goal_state
+
+def find_blank(state):
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] == 0:
+                return i, j
+
+def get_new_state(state, move):
+    x, y = find_blank(state)
+    new_x, new_y = x + move[0], y + move[1]
+    if 0 <= new_x < 3 and 0 <= new_y < 3:
+        new_state = [row[:] for row in state]
+        new_state[x][y], new_state[new_x][new_y] = new_state[new_x][new_y], new_state[x][y]
+        return new_state
+    return None
+
+def bfs(start_state):
+    queue = deque([(start_state, [])])
+    visited = set()
+    visited.add(tuple(map(tuple, start_state)))
+
+    while queue:
+        state, path = queue.popleft()
+
+        if is_goal(state):
+            return path
+
+        for move in moves:
+            new_state = get_new_state(state, move)
+            if new_state is not None and tuple(map(tuple, new_state)) not in visited:
+                visited.add(tuple(map(tuple, new_state)))
+                queue.append((new_state, path + [new_state]))
+
+    return None
+
+# Define the initial state of the puzzle
+initial_state = [
+    [0, 2, 3],
+    [4, 6, 1],
+    [7, 5, 8]
+]
+
+# Solve the puzzle
+solution = bfs(initial_state)
+
+if solution:
+    print("Solution found!")
+    for step in solution:
+        for row in step:
+            print(row)
+        print()
+else:
+    print("No solution found.")
+
+
+-----task 2 q). Solve depth first search and breadth first search of following graph starting from node A and
+reaching goal node G:
+
+for dfs:
+def dfs(graph, start, goal, path=None, visited=None):
+    if path is None:
+        path = []
+    if visited is None:
+        visited = set()
+
+    path.append(start)
+    visited.add(start)
+
+    if start == goal:
+        return path
+
+    for neighbor in graph[start]:
+        if neighbor not in visited:
+            result = dfs(graph, neighbor, goal, path, visited)
+            if result is not None:
+                return result
+
+    path.pop()
+    return None
+
+# Define the graph as an adjacency list
+graph = {
+    'A': ['B', 'D'],
+    'B': ['C', 'E'],
+    'C': [],
+    'D': ['E', 'G'],
+    'E': ['F'],
+    'F': [],
+    'G': ['H'],
+    'H': ['G']
+}
+
+# Perform DFS
+start_node = 'A'
+goal_node = 'G'
+dfs_path = dfs(graph, start_node, goal_node)
+
+print("DFS Path:", dfs_path)
+
+
+for bfs:
+from collections import deque
+
+def bfs(graph, start, goal):
+    queue = deque([(start, [start])])
+    visited = set()
+
+    while queue:
+        current, path = queue.popleft()
+        visited.add(current)
+
+        if current == goal:
+            return path
+
+        for neighbor in graph[current]:
+            if neighbor not in visited and neighbor not in (p[0] for p in queue):
+                queue.append((neighbor, path + [neighbor]))
+
+    return None
+
+# Define the graph as an adjacency list
+graph = {
+    'A': ['B', 'D'],
+    'B': ['C', 'E'],
+    'C': [],
+    'D': ['E', 'G'],
+    'E': ['F'],
+    'F': [],
+    'G': ['H'],
+    'H': ['G']
+}
+
+# Perform BFS
+start_node = 'A'
+goal_node = 'G'
+bfs_path = bfs(graph, start_node, goal_node)
+
+print("BFS Path:", bfs_path)
+
+
+********* lab 5 *****************
+task 1: q) Uniform Cost Search
+ Best First Search
+ A* Search
+
+#UCF
+import heapq
+
+def uniform_cost_search(graph, start, goal):
+    open_set = []
+    heapq.heappush(open_set, (0, start))
+    came_from = {}
+    cost_so_far = {start: 0}
+
+    while open_set:
+        current_cost, current_node = heapq.heappop(open_set)
+
+        if current_node == goal:
+            path = []
+            while current_node in came_from:
+                path.append(current_node)
+                current_node = came_from[current_node]
+            path.append(start)
+            return path[::-1]
+
+        for neighbor, cost in graph[current_node].items():
+            new_cost = current_cost + cost
+            if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                cost_so_far[neighbor] = new_cost
+                priority = new_cost
+                heapq.heappush(open_set, (priority, neighbor))
+                came_from[neighbor] = current_node
+
+    return None
+
+graph = {
+    'A': {'B': 9, 'C': 4, 'D': 7},
+    'B': {'A': 9, 'E': 11},
+    'C': {'A': 4, 'E': 17, 'F': 12},
+    'D': {'A': 7, 'F': 14},
+    'E': {'B': 11, 'C': 17, 'Z': 5},
+    'F': {'C': 12, 'D': 14, 'Z': 9},
+    'Z': {}
+}
+
+start = 'A'
+goal = 'Z'
+ucs_path = uniform_cost_search(graph, start, goal)
+print("Uniform Cost Search Path:", ucs_path)
+
+
+#A*
+
+import heapq
+def a_star_search(graph, start, goal, h):
+    open_set = []
+    heapq.heappush(open_set, (h[start], start))
+    came_from = {}
+    cost_so_far = {start: 0}
+
+    while open_set:
+        _, current_node = heapq.heappop(open_set)
+
+        if current_node == goal:
+            path = []
+            while current_node in came_from:
+                path.append(current_node)
+                current_node = came_from[current_node]
+            path.append(start)
+            return path[::-1]
+
+        for neighbor, cost in graph[current_node].items():
+            new_cost = cost_so_far[current_node] + cost
+            if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                cost_so_far[neighbor] = new_cost
+                priority = new_cost + h[neighbor]
+                heapq.heappush(open_set, (priority, neighbor))
+                came_from[neighbor] = current_node
+
+    return None
+graph = {
+    'A': {'B': 9, 'C': 4, 'D': 7},
+    'B': {'A': 9, 'E': 11},
+    'C': {'A': 4, 'E': 17, 'F': 12},
+    'D': {'A': 7, 'F': 14},
+    'E': {'B': 11, 'C': 17, 'Z': 5},
+    'F': {'C': 12, 'D': 14, 'Z': 9},
+    'Z': {}
+}
+heuristic = {
+    'A': 21,
+    'B': 14,
+    'C': 18,
+    'D': 18,
+    'E': 5,
+    'F': 8,
+    'Z': 0
+}
+start = 'A'
+goal = 'Z'
+a_star_path = a_star_search(graph, start, goal, heuristic)
+print("A* Search Path:", a_star_path)
+
+#BFS
+import heapq
+
+def best_first_search(graph, start, goal, h):
+    open_set = []
+    heapq.heappush(open_set, (h[start], start))
+    came_from = {}
+    closed_set = set()  # To keep track of visited nodes
+
+    while open_set:
+        _, current_node = heapq.heappop(open_set)
+
+        if current_node == goal:
+            path = []
+            while current_node in came_from:
+                path.append(current_node)
+                current_node = came_from[current_node]
+            path.append(start)
+            return path[::-1]
+
+        closed_set.add(current_node)
+
+        for neighbor in graph[current_node]:
+            if neighbor not in closed_set:
+                priority = h[neighbor]
+                heapq.heappush(open_set, (priority, neighbor))
+                came_from[neighbor] = current_node
+                closed_set.add(neighbor)  # Mark neighbor as visited
+
+    return None
+
+heuristic = {
+    'A': 21,
+    'B': 14,
+    'C': 18,
+    'D': 18,
+    'E': 5,
+    'F': 8,
+    'Z': 0
+}
+
+graph = {
+    'A': {'B': 9, 'C': 4, 'D': 7},
+    'B': {'A': 9, 'E': 11},
+    'C': {'A': 4, 'E': 17, 'F': 12},
+    'D': {'A': 7, 'F': 14},
+    'E': {'B': 11, 'C': 17, 'Z': 5},
+    'F': {'C': 12, 'D': 14, 'Z': 9},
+    'Z': {}  # Ensure goal node is included in the graph
+}
+
+start = 'A'
+goal = 'Z'
+bfs_path = best_first_search(graph, start, goal, heuristic)
+print("Best First Search Path:", bfs_path)
+
+************task 2******************
+
+graph = {
+    'Arad': {'Zerind': 75, 'Sibiu': 140, 'Timisoara': 118},
+    'Zerind': {'Arad': 75, 'Oradea': 71},
+    'Oradea': {'Zerind': 71, 'Sibiu': 151},
+    'Sibiu': {'Arad': 140, 'Oradea': 151, 'Fagaras': 99, 'Rimnicu Vilcea': 80},
+    'Timisoara': {'Arad': 118, 'Lugoj': 111},
+    'Lugoj': {'Timisoara': 111, 'Mehadia': 70},
+    'Mehadia': {'Lugoj': 70, 'Drobeta': 75},
+    'Drobeta': {'Mehadia': 75, 'Craiova': 120},
+    'Craiova': {'Drobeta': 120, 'Rimnicu Vilcea': 146, 'Pitesti': 138},
+    'Rimnicu Vilcea': {'Sibiu': 80, 'Craiova': 146, 'Pitesti': 97},
+    'Fagaras': {'Sibiu': 99, 'Bucharest': 211},
+    'Pitesti': {'Rimnicu Vilcea': 97, 'Craiova': 138, 'Bucharest': 101},
+    'Bucharest': {'Fagaras': 211, 'Pitesti': 101, 'Giurgiu': 90, 'Urziceni': 85},
+    'Giurgiu': {'Bucharest': 90},
+    'Urziceni': {'Bucharest': 85, 'Hirsova': 98, 'Vaslui': 142},
+    'Hirsova': {'Urziceni': 98, 'Eforie': 86},
+    'Eforie': {'Hirsova': 86},
+    'Vaslui': {'Urziceni': 142, 'Iasi': 92},
+    'Iasi': {'Vaslui': 92, 'Neamt': 87},
+    'Neamt': {'Iasi': 87}
+}
+
+# Heuristic values provided in the text
+h_provided = {
+    'Arad': 366,
+    'Bucharest': 0,
+    'Craiova': 160,
+    'Drobeta': 242,
+    'Eforie': 161,
+    'Fagaras': 176,
+    'Giurgiu': 77,
+    'Hirsova': 151,
+    'Iasi': 226,
+    'Lugoj': 244,
+    'Mehadia': 241,
+    'Neamt': 234,
+    'Oradea': 380,
+    'Pitesti': 100,
+    'Rimnicu Vilcea': 193,
+    'Sibiu': 253,
+    'Timisoara': 329,
+    'Urziceni': 80,
+    'Vaslui': 199,
+    'Zerind': 374
+}
+
+# My proposed heuristic
+h_my_proposed = {
+    'Arad': 350,
+    'Bucharest': 0,
+    'Craiova': 170,
+    'Drobeta': 230,
+    'Eforie': 160,
+    'Fagaras': 180,
+    'Giurgiu': 75,
+    'Hirsova': 150,
+    'Iasi': 220,
+    'Lugoj': 250,
+    'Mehadia': 240,
+    'Neamt': 225,
+    'Oradea': 370,
+    'Pitesti': 110,
+    'Rimnicu Vilcea': 200,
+    'Sibiu': 250,
+    'Timisoara': 320,
+    'Urziceni': 85,
+    'Vaslui': 195,
+    'Zerind': 360
+}
+import heapq
+
+def a_star_search(graph, start, goal, h):
+    open_set = []
+    heapq.heappush(open_set, (h[start], start))
+    came_from = {}
+    cost_so_far = {start: 0}
+
+    while open_set:
+        _, current_node = heapq.heappop(open_set)
+
+        if current_node == goal:
+            path = []
+            while current_node in came_from:
+                path.append(current_node)
+                current_node = came_from[current_node]
+            path.append(start)
+            return path[::-1], cost_so_far[goal]
+
+        for neighbor, cost in graph[current_node].items():
+            new_cost = cost_so_far[current_node] + cost
+            if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                cost_so_far[neighbor] = new_cost
+                priority = new_cost + h[neighbor]
+                heapq.heappush(open_set, (priority, neighbor))
+                came_from[neighbor] = current_node
+
+    return None, float('inf')
+
+# Running A* with provided heuristic
+start = 'Arad'
+goal = 'Bucharest'
+path_provided, cost_provided = a_star_search(graph, start, goal, h_provided)
+print("A* Search Path with Provided Heuristic:", path_provided)
+print("Total Cost with Provided Heuristic:", cost_provided)
+
+# Running A* with my proposed heuristic
+path_proposed, cost_proposed = a_star_search(graph, start, goal, h_my_proposed)
+print("A* Search Path with My Proposed Heuristic:", path_proposed)
+print("Total Cost with My Proposed Heuristic:", cost_proposed)
